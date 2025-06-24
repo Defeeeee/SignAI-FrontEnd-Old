@@ -16,6 +16,69 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+    <style>
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .loading-modal {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .loading-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            animation: rotate-logo 3s infinite ease-in-out;
+        }
+
+        .loading-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        @keyframes rotate-logo {
+            0% {
+                transform: rotate(0deg);
+            }
+            25% {
+                transform: rotate(180deg);
+            }
+            50% {
+                transform: rotate(180deg);
+            }
+            75% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(0deg);
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Botones y contenido principal -->
@@ -36,10 +99,19 @@
         </div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-modal">
+            <div class="loading-icon">
+                <img src="../imgs/hands.png" alt="Logo">
+            </div>
+            <p class="loading-text">Translating...</p>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="../header/header.js"></script>
     <script src="../upload/up.js"></script> 
-    <script src="../conection/up.js"></script>
 
     <script>
         function agregarHeader() {
@@ -65,25 +137,20 @@
             const btnUpload = document.getElementById('btn1');
             const fileInput = document.getElementById('file');
 
-            btnUpload.addEventListener('click', () => {
-                fileInput.click();
+            // Escucha el clic en el botón de subida
+            btnUpload.addEventListener('click', function() {
+                console.log("Botón de subir clickeado. Abriendo el selector de archivos...");
+                fileInput.click(); // Simula un clic en el input de archivo
             });
 
-            fileInput.addEventListener('change', () => {
-                const file = fileInput.files[0];
-                if (file) {
-                    console.log('Video seleccionado:', file.name);
-                    // alert('Has subido: ' + file.name);
-                    alert('Video subido correctamente');
-                }
-            });
-
+            // Escucha el cambio en el input de archivo
             fileInput.addEventListener('change', function() {
                 const file = fileInput.files[0];
                 if (file) {
                     console.log('Video seleccionado:', file.name);
                     console.log('Tamaño del archivo:', file.size, 'bytes');
                     console.log('Tipo de archivo:', file.type);
+                    // Llama a la función para enviar el archivo al back-end
                     uploadVideo(file);
                 } else {
                     console.log('No se ha seleccionado ningún archivo.');
@@ -92,35 +159,54 @@
 
             function uploadVideo(file) {
                 const formData = new FormData();
-                formData.append("video", file);
-                formData.append('Mail_Usuario', "ECHU13@gmail.com");
+                formData.append('file', file); 
+                formData.append('upload_preset', 'signai');
 
-                const token = localStorage.getItem("token");
+                console.log("Preparando para subir el video a Cloudinary...");
 
-                fetch('http://localhost:3000/CrearVideo', { 
+                // Show loading overlay with rotating logo
+                const loadingOverlay = document.getElementById('loading-overlay');
+                loadingOverlay.style.display = 'flex';
+
+                // Step 1: Upload to Cloudinary
+                fetch('https://api.cloudinary.com/v1_1/dzonya1wx/video/upload', { 
                     method: 'POST',
-                    headers: {
-                        "Authorization": `Bearer ${token}`
-                    },
                     body: formData
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Respuesta de Cloudinary recibida:', response); 
+                    return response.json();
+                })
                 .then(data => {
-                    console.log('Datos devueltos por el servidor aaaaaa:', data);
-                    if (data && data.ID) {
-                        console.log("Archivo subido exitosamente AAAAAAAAAAAA:", data);
-                        localStorage.setItem('videoId', data.ID);
-                        console.log('ID guardado en localStorage:', data.ID);
-                        // alert("Archivo subido exitosamente: " + data.message);
+                    console.log('Datos devueltos por Cloudinary:', data);
+                    if (data && data.secure_url) {
+                        console.log("Video subido exitosamente a Cloudinary:", data.secure_url);
+
+                        // Step 2: Get translation from SignAI API
+                        return fetch(`https://signai.fdiaznem.com.ar/predict_gemini?video_url=${encodeURIComponent(data.secure_url)}`)
+                            .then(response => response.json())
+                            .then(translationData => {
+                                console.log('Traducción recibida:', translationData);
+
+                                // Store the translation in localStorage
+                                localStorage.setItem('translation', translationData.translation);
+
+                                // Redirect directly to 6pantalla to show the translation
+                                window.location.href = "../6pantalla/index.html";
+
+                                return translationData;
+                            });
                     } else {
-                        alert("Error: " + (data.message || "ID no disponible."));
+                        // Hide loading overlay if there's an error
+                        loadingOverlay.style.display = 'none';
+                        throw new Error("No se recibió la URL segura del video");
                     }
                 })
-                .then(() => {
-                    window.location.href = "../8pantalla/index.html";
-                })
                 .catch(error => {
-                    alert("Error al subir el archivo: " + error.message);
+                    console.error('Error:', error);
+                    // Hide loading overlay if there's an error
+                    loadingOverlay.style.display = 'none';
+                    alert("Error en el proceso: " + error.message);
                 });
             }
         });

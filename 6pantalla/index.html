@@ -54,39 +54,17 @@
                 }
             });
 
-            // Función para obtener la traducción del video
+            // Función para obtener la traducción del localStorage
             function getTranslation() {
-                const videoId = localStorage.getItem('videoId');
-                console.log(localStorage)
-                if (!videoId) {
-                    alert("No se encontró el ID del video en localStorage.");
-                    return;
-                }
+                const translation = localStorage.getItem('translation');
+                console.log('Translation from localStorage:', translation);
 
-                fetch(`https://sign-ai-web.vercel.app/${videoId}/getTexto`, {  
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('token')
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error en la red: ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const textoDevuelto = data.Texto_Devuelto;
-                    if (textoDevuelto) {
-                        document.getElementById("cuadroTexto").value = textoDevuelto;
-                    } else {
-                        alert("No se encontró el texto para el ID: " + videoId);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al obtener los textos:', error);
-                    alert("Error de red: " + error.message);
-                });
+                if (translation) {
+                    // Display the translation in the textarea
+                    document.getElementById("cuadroTexto").value = translation;
+                } else {
+                    alert("No se encontró la traducción en localStorage.");
+                }
             }
 
             // Llama a la función para obtener la traducción

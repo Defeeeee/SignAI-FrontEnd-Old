@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Tamaño del archivo:', file.size, 'bytes');
             console.log('Tipo de archivo:', file.type);
             // Llama a la función para enviar el archivo al back-end
-            uploadVideo(file); DataView
+            uploadVideo(file);
         } else {
             console.log('No se ha seleccionado ningún archivo.');
         }
@@ -24,35 +24,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function uploadVideo(file) {
         const formData = new FormData();
-        formData.append('video', file); 
-        formData.append('Mail_Usuario',"ECHU13@gmail.com")
-    
-        console.log("Preparando para enviar el archivo al backend...");
-        
-        fetch('https://sign-ai-web.vercel.app/CrearVideo', { 
+        formData.append('file', file); 
+        formData.append('upload_preset', 'signai');
+
+        console.log("Preparando para subir el video a Cloudinary...");
+
+        // Step 1: Upload to Cloudinary
+        fetch('https://api.cloudinary.com/v1_1/dzonya1wx/video/upload', { 
             method: 'POST',
-            body: formData 
+            headers: {
+                'Authorization': 'Basic MTI5NTU3OTQzNzU1NzQyOk9rWFZPQzkwWVJJNWxTbWowZklTOEVmTzZ6cw=='
+            },
+            body: formData
         })
         .then(response => {
-            console.log('Respuesta del servidor recibida:', response); 
+            console.log('Respuesta de Cloudinary recibida:', response); 
             return response.json();
         })
         .then(data => {
-            console.log('Datos devueltos por el servidor:', data);
-            if (data && data.id) {
-                console.log("Archivo subido exitosamente:", data);
-                localStorage.setItem('videoId', data.id);
-                console.log('ID guardado en localStorage:', data.id);
-                alert("Archivo subido exitosamente: " + data.message);
+            console.log('Datos devueltos por Cloudinary:', data);
+            if (data && data.secure_url) {
+                console.log("Video subido exitosamente a Cloudinary:", data.secure_url);
+
+                // Step 2: Get translation from SignAI API
+                return fetch(`https://signai.fdiaznem.com.ar/predict_gemini?video_url=${encodeURIComponent(data.secure_url)}`)
+                    .then(response => response.json())
+                    .then(translationData => {
+                        console.log('Traducción recibida:', translationData);
+
+                        // Display the translation to the user
+                        alert("Traducción: " + translationData.translation);
+
+                        return translationData;
+                    });
             } else {
-                alert("Error: " + (data.message || "ID no disponible."));
+                throw new Error("No se recibió la URL segura del video");
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert("Error al subir el archivo: " + error.message);
+            alert("Error en el proceso: " + error.message);
         });
-        
+
     }
-    
+
 });
