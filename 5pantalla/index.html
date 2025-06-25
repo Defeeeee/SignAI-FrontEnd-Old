@@ -186,7 +186,7 @@
                         return fetch(`https://signai.fdiaznem.com.ar/predict_gemini?video_url=${encodeURIComponent(data.secure_url)}`)
                             .then(response => response.json())
                             .then(translationData => {
-                                console.log('Traducción recibida:', translationData);
+                                console.log('Translation received:', translationData);
 
                                 // Store the translation in localStorage
                                 localStorage.setItem('translation', translationData.translation);

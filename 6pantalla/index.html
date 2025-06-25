@@ -54,7 +54,7 @@
                 }
             });
 
-            // Función para obtener la traducción del localStorage
+            // Function to get the translation from localStorage
             function getTranslation() {
                 const translation = localStorage.getItem('translation');
                 console.log('Translation from localStorage:', translation);
@@ -63,11 +63,11 @@
                     // Display the translation in the textarea
                     document.getElementById("cuadroTexto").value = translation;
                 } else {
-                    alert("No se encontró la traducción en localStorage.");
+                    alert("Translation not found in localStorage.");
                 }
             }
 
-            // Llama a la función para obtener la traducción
+            // Call the function to get the translation
             getTranslation();
         });
     </script>
