@@ -13,9 +13,9 @@ function header() {
         </header>
         <div id="dropdown">
             <ul class="ul1">
-                Traductor
+                Translator
                 <a href="../4pantalla/index.html" class="tr">
-                    New Traduction
+                    New Translation
                 </a>
             </ul>
             <ul class="ul1">
